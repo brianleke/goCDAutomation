@@ -51,12 +51,12 @@
     apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
 
   - name: Download the Go-Server
-    command: curl -O http://download.go.cd/gocd-deb/go-server-15.1.0-1863.deb
+    command: wget -c  http://download.go.cd/gocd-deb/go-server-15.1.0-1863.deb
     args:
       chdir: /vagrant/
 
   - name: Download the Go-Agent
-    command: curl -O http://download.go.cd/gocd-deb/go-agent-15.1.0-1863.deb
+    command: wget -c  http://download.go.cd/gocd-deb/go-agent-15.1.0-1863.deb
     args:
       chdir: /vagrant/
 
