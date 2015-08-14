@@ -1,0 +1,145 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+  vars:
+    app_name: Rumba
+    locale: en_US.UTF-8
+    timezone: UTC
+    go_version: 15.1.0-1863
+    GOCD_USER: go
+    GOCD_GROUP: go
+    project_root: /vagrant/iinet
+    REPO_USER_NAME: dummy_user
+    REPO_PASSWORD: dummy_password
+    REPOSITORY_NAME: test_repository_url
+    PIPELINE_ONE_REPO: repository_one_url
+    PIPELINE_TWO_REPO: repository_two_url
+    PIPELINE_THREE_REPO: repository_three_url
+
+  tasks:
+  - name: dev locale
+    action: command sudo update-locale LC_ALL=en_US.UTF-8
+
+  - name: set default English
+    command: /usr/sbin/update-locale LANG={{ locale }} LC_ALL={{ locale }} LANGUAGE=en_US:en
+
+  - name: set /etc/localtime to UTC Timezone
+    command: /bin/cp /usr/share/zoneinfo/{{ timezone }} /etc/localtime
+
+  - name: apt-get update the server
+    apt: update_cache=yes
+
+  - name: install packages
+    apt: name={{item}} state=present
+    with_items:
+      - debhelper
+      - git
+      - vim
+      - curl
+      - tree
+      - unzip
+      - libxml-libxml-perl
+
+  - name: Add JRE ppa
+    apt_repository: repo=ppa:webupd8team/java state=present
+
+  - name: Automatically select the Oracle License
+    shell: echo debconf shared/accepted-oracle-license-v1-1 select true | sudo debconf-set-selections
+
+  - name: Install JRE
+    apt: pkg=oracle-java7-installer state=latest update-cache=yes force=yes
+
+  - name: install Go-Agent
+    shell: dpkg -i go-agent-{{go_version}}.deb chdir=/vagrant/
+
+  - name: install Go-Server
+    shell: dpkg -i go-server-{{go_version}}.deb chdir=/vagrant/
+
+  - name: start go-server
+    sudo: yes
+    service: name=go-server state=started
+    notify:
+       - ensure go-server running
+
+  - name: start go agent on the ubuntu box
+    action: command sudo /usr/share/go-agent/agent.sh
+
+  - name: Wait for Go to start
+    wait_for: port=8153 timeout=300
+
+  - name: Clone the saxon lint library
+    git: >
+      repo=https://github.com/sputnick-dev/saxon-lint.git
+      dest=/vagrant/saxon-lint/
+      update=no
+
+  - name: Change saxon-lint to executable
+    shell: chmod +x saxon-lint.pl chdir=/vagrant/saxon-lint/ 
+
+  - name: retrieving server ID
+    command: ./saxon-lint.pl --xpath 'string(/cruise/server/@serverId)' /etc/go/cruise-config.xml chdir=/vagrant/saxon-lint/
+    register: tmp_go_server_id
+    changed_when: false
+
+  - name: Save server ID as a fact
+    set_fact:
+     GOCD_SERVER_ID: "{{ tmp_go_server_id.stdout }}"
+
+  - name: retrieving agent ID
+    command: ./saxon-lint.pl --xpath 'string(/cruise/agents/agent/@uuid)' /etc/go/cruise-config.xml chdir=/vagrant/saxon-lint/
+    register: tmp_go_agent_id
+    changed_when: false
+
+  - name: Save agent ID as a fact
+    set_fact:
+     GOCD_AGENT_ID: "{{ tmp_go_agent_id.stdout }}"
+
+  - name: Set the repository user name
+    set_fact:
+      REPO_USER_NAME: "{{REPO_USER_NAME}}"
+
+  - name: Set the repository user password
+    set_fact:
+      REPO_PASSWORD: "{{REPO_PASSWORD}}"
+
+  - name: Set the repository name
+    set_fact:
+      REPOSITORY_NAME: "{{REPOSITORY_NAME}}"
+
+  - name: Set the pipeline one repository url
+    set_fact:
+      PIPELINE_ONE_REPO: "{{PIPELINE_ONE_REPO}}"
+
+  - name: Set the pipeline two repository url
+    set_fact:
+      PIPELINE_TWO_REPO: "{{PIPELINE_TWO_REPO}}"
+
+  - name: Set the pipeline three repository url
+    set_fact:
+      PIPELINE_THREE_REPO: "{{PIPELINE_THREE_REPO}}"
+
+  - name: retrieve existing cruise-config.xml
+    fetch: dest="/tmp/{{ ansible_hostname }}/" src="/etc/go/cruise-config.xml" flat="yes"
+    changed_when: false
+
+  - name: Check for existing agents
+    command: ./saxon-lint.pl --xpath 'count(//agents)' /etc/go/cruise-config.xml chdir=/vagrant/saxon-lint/
+    register: tmp_go_agents_count
+    changed_when: false
+
+  - name: Save existing agents
+    command: ./saxon-lint.pl --xpath '//agents' /etc/go/cruise-config.xml chdir=/vagrant/saxon-lint/
+    register: tmp_go_agents_config
+    changed_when: false
+    when: tmp_go_agents_count.stdout != "0"
+
+  - name: Save agents as a fact
+    set_fact:
+     GOCD_EXISTING_AGENTS: "{{ tmp_go_agents_config.stdout }}"
+    when: tmp_go_agents_count.stdout != "0"
+
+  - name: Creating Go configuration file
+    template: backup=no dest=/etc/go/cruise-config.xml group={{ GOCD_GROUP }} mode=0644 owner={{ GOCD_USER }} src=base-config.xml
+
+

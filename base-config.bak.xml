@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cruise xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cruise-config.xsd" schemaVersion="75">
+   <server artifactsdir="artifacts" commandRepositoryLocation="default" serverId="{{ GOCD_SERVER_ID }}"/>
+   <pipelines group="defaultGroup">
+    <pipeline name="Main_Pipeline">
+      <materials>
+        <git url="https://{{REPO_USER_NAME}}:{{REPO_PASSWORD}}@{{REPOSITORY}}" />
+        <pipeline pipelineName="Pipeline_dependency_one" stageName="Build" materialName="pipeline_one" />
+        <pipeline pipelineName="Pipeline_dependency_two" stageName="Build" materialName="pipeline_two" />
+        <pipeline pipelineName="Pipeline_dependency_three" stageName="Build" materialName="pipeline_three" />
+      </materials>
+      <stage name="Checkout">
+        <jobs>
+          <job name="Check">
+            <tasks>
+              <exec command="git">
+                <arg>status</arg>
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="Build">
+        <jobs>
+          <job name="Build">
+            <tasks>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>sudo perl Build.PL</arg>
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="Install_Dependencies">
+        <jobs>
+          <job name="Install_deps">
+            <tasks>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>sudo perl Build.PL</arg>
+              </exec>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>sudo perl ./Build installdeps</arg>
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+      <stage name="Run_Tests">
+        <jobs>
+          <job name="Unit_Test">
+            <environmentvariables>
+              <variable name="PERL5LIB">
+                <value>lib:/usr/share/perl5</value>
+              </variable>
+            </environmentvariables>
+            <tasks>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>sudo perl Build.PL</arg>
+              </exec>
+              <exec command="/bin/bash">
+                <arg>-c</arg>
+                <arg>sudo perl ./Build installdeps</arg>
+              </exec>
+              <exec command="/bin/bash" workingdir="t">
+                <arg>-c</arg>
+                <arg>"./run_all"</arg>
+                <runif status="passed" />
+              </exec>
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="Pipeline_dependency_one">
+      <materials>
+        <git url="https://{{REPO_USER_NAME}}:{{REPO_PASSWORD}}@{{PIPELINE_ONE_REPO}}" />
+      </materials>
+      <stage name="Build">
+        <jobs>
+          <job name="Build_Dependency">
+            <tasks>
+              <exec command="/bin/bash" />
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="Pipeline_dependency_two">
+      <materials>
+        <git url="https://{{REPO_USER_NAME}}:{{REPO_PASSWORD}}@{{PIPELINE_TWO_REPO}}" />
+      </materials>
+      <stage name="Build">
+        <jobs>
+          <job name="Build">
+            <tasks>
+              <exec command="/bin/bash" />
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+    <pipeline name="Pipeline_dependency_three">
+      <materials>
+        <git url="https://{{REPO_USER_NAME}}:{{REPO_PASSWORD}}@{{PIPELINE_THREE_REPO}}" />
+      </materials>
+      <stage name="Build">
+        <jobs>
+          <job name="Build">
+            <tasks>
+              <exec command="/bin/bash" />
+            </tasks>
+          </job>
+        </jobs>
+      </stage>
+    </pipeline>
+  </pipelines>
+  <agents>
+    <agent hostname="vagrant-ubuntu-precise-64" ipaddress="10.0.2.15" uuid="{{ GOCD_AGENT_ID }}" />
+  </agents>
+</cruise>
