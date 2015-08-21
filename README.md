@@ -14,6 +14,12 @@ Clone the repository
 CD into the testmachineautomation directory
 * cd goCDAutomation
 
+Make sure the access configuration file exists by copying the .user-access-config.ex.yml to .user-access-config.yml
+* cp .user-access-config.ex.yml .user-access-config.yml
+
+Modify the user details to match you settings with either VIM or nano etc
+* vim .user-access-config.yml
+
 Make sure repositories required are correctly configured by modifying the 
 * REPO_USER_NAME and 
 * REPO_PASSWORD 
