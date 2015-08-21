@@ -30,6 +30,20 @@
   - name: apt-get update the server
     apt: update_cache=yes
 
+   - name: Create a 4.5G swap file
+    command: "{{item}}"
+    with_items:
+      - sudo dd if=/dev/zero of=/swapfile bs=500M count=9
+      - sudo chmod 600 /swapfile
+      - sudo mkswap /swapfile
+      - sudo swapon /swapfile
+
+  - name: Make the swapfile permanent
+    lineinfile: >
+                  dest=/etc/fstab
+                  line="/swapfile\tnone\tswap\tsw\t0\t0"
+
+
   - name: install packages
     apt: name={{item}} state=present
     with_items:

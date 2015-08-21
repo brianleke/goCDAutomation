@@ -5,13 +5,14 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
   config.vm.box = "hashicorp/precise64"
   config.vm.network "forwarded_port", guest: 80, host: 8081
   config.vm.network "forwarded_port", guest: 8153, host: 9001
   config.vm.synced_folder "files", "/vagrant"
 
   config.vm.provider "virtualbox" do |vb|
-    vb.customize ["modifyvm", :id, "--memory", "4096"]
+    vb.customize ["modifyvm", :id, "--memory", "1024"]
   end
   
   config.vm.provision :ansible do |ansible|
