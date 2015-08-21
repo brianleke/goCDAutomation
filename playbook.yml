@@ -10,8 +10,6 @@
     GOCD_USER: go
     GOCD_GROUP: go
     project_root: /vagrant/iinet
-    REPO_USER_NAME: dummy_user
-    REPO_PASSWORD: dummy_password
     REPOSITORY_NAME: test_repository_url
     PIPELINE_ONE_REPO: repository_one_url
     PIPELINE_TWO_REPO: repository_two_url
