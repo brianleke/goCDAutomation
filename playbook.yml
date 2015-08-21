@@ -16,6 +16,8 @@
     PIPELINE_ONE_REPO: repository_one_url
     PIPELINE_TWO_REPO: repository_two_url
     PIPELINE_THREE_REPO: repository_three_url
+  vars_files:
+    - .user-access-config.yml
 
   tasks:
   - name: dev locale
