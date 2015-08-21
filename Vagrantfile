@@ -13,6 +13,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.provider "virtualbox" do |vb|
     vb.customize ["modifyvm", :id, "--memory", "1024"]
+    vb.customize ["modifyvm", :id, "--hwvirtex", "off"]
+    vb.customize ["modifyvm", :id, "--vtxvpid", "off"]
   end
   
   config.vm.provision :ansible do |ansible|
