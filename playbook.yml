@@ -33,15 +33,15 @@
   - name: Create a 4.5G swap file
     command: "{{item}}"
     with_items:
-      - sudo dd if=/dev/zero of=/swapfile bs=500M count=9
-      - sudo chmod 600 /swapfile
-      - sudo mkswap /swapfile
-      - sudo swapon /swapfile
+      - sudo dd if=/dev/zero of=/swapfile bs=500M count=9 2>/dev/null
+      - sudo chmod 600 /swapfile 2>/dev/null
+      - sudo mkswap /swapfile 2>/dev/null
+      - sudo swapon /swapfile 2>/dev/null
 
   - name: Make the swapfile permanent
     lineinfile: >
                   dest=/etc/fstab
-                  line="/swapfile\tnone\tswap\tsw\t0\t0"
+                  line="/swapfile  none  swap  sw  0  0"
 
   - name: install packages
     apt: name={{item}} state=present
