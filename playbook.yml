@@ -33,10 +33,11 @@
   - name: Create a 4.5G swap file
     command: "{{item}}"
     with_items:
-      - sudo dd if=/dev/zero of=/swapfile bs=500M count=9 2>/dev/null
-      - sudo chmod 600 /swapfile 2>/dev/null
-      - sudo mkswap /swapfile 2>/dev/null
-      - sudo swapon /swapfile 2>/dev/null
+      - "sudo dd if=/dev/zero of=/swapfile bs=500M count=9 conv=notrunc,noerror"
+      - "sudo chmod 600 /swapfile"
+      - "sudo mkswap /swapfile"
+      - "sudo swapoff -a"
+      - "sudo swapon /swapfile"
 
   - name: Make the swapfile permanent
     lineinfile: >
