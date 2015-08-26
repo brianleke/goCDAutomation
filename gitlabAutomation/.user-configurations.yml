@@ -1,0 +1,4 @@
+---
+GITLAB_URL: http://localhost/
+mysql_root_password: 'testpassword'
+GITLAB_HOSTNAME: localhost

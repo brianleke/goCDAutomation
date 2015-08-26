@@ -1,4 +1,4 @@
 .DS_Store
 .vagrant
-goCD/files/*.deb
+files/*.deb
 .user-access-config.yml

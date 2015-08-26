@@ -1,0 +1,40 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+  vars:
+    sql_toolbox_dump_file: /vagrant/scripts/mySql_schema.txt
+  vars_files:
+    - .user-configurations.yml
+
+  tasks:
+  - name: install mySQL packages
+    apt: name={{item}} state=present
+    with_items:
+      - nginx
+
+  - name: copy sites-available file
+    command: sudo cp lib/support/nginx/gitlab /etc/nginx/sites-available/gitlab
+    args:
+      chdir: /home/git/gitlab
+
+  - name: delete the default configurations from sites-available
+    command: sudo rm /etc/nginx/sites-available/default
+
+  - name: delete the default configurations sites-enabled
+    command: sudo rm /etc/nginx/sites-enabled/default
+
+  - name: Symbolic link the sites-enabled to sites-available
+    command: sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
+
+  #- name: Symbolic link the sites-enabled default to sites-available
+  #  command: sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/default
+
+  - name: Replace the server name in the nginx configuration
+    replace: >
+                dest=/etc/nginx/sites-available/gitlab
+                regexp='(\s+)server_name(\s+)YOUR_SERVER_FQDN' 
+                replace='\1server_name\2{{GITLAB_HOSTNAME}}'
+
+  - name: Restart nginx service
+    command: sudo service nginx restart

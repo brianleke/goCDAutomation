@@ -1,0 +1,128 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+  vars:
+    locale: en_US.UTF-8
+    timezone: UTC
+    gitlab_root: /home/git/gitlab-shell
+    # gitlab_version: 7-9-stable
+    gitlab_version: 6-0-stable
+  vars_files:
+    - .user-configurations.yml
+
+  tasks:
+  - name: Clone the git repository
+    command: sudo -u git -H git clone https://github.com/gitlabhq/gitlabhq.git gitlab
+    args:
+      chdir: /home/git/
+
+  - name: Run the git script to set up the gitlab config file after cloning
+    command: "{{item}}"
+    args:
+      chdir: /home/git/gitlab
+    with_items:
+      - sudo -u git -H git checkout {{gitlab_version}}
+      - sudo -u git -H cp config/gitlab.yml.example config/gitlab.yml
+
+  - name: replace the local configuration of the local host
+    lineinfile: >
+                dest=/home/git/gitlab-shell/config.yml 
+                regexp='gitlab_url' 
+                line="host: \"{{GITLAB_HOSTNAME}}\"" 
+
+  - name: Make the gitlab directories
+    file: path=/home/git/gitlab/{{item}} state=directory owner=git
+    with_items:
+      - tmp/pids/
+      - tmp/sockets/
+      - public/uploads
+    sudo: yes
+
+  - name: Change the directory owners
+    command: sudo chown -R git /home/git/gitlab/{{item}}
+    with_items:
+      - log/
+      - tmp/
+
+  - name: Make the gitlab satellite folder
+    command: sudo -u git -H mkdir /home/git/gitlab-satellites
+
+  - name: Change the access rights to directories
+    command: sudo chmod -R u+rwX /home/git/gitlab/{{item}}
+    with_items:
+      - log/
+      - tmp/
+      - tmp/pids/
+      - tmp/sockets/
+      - public/uploads
+
+  - name: Run git settings commands
+    command: sudo -u git -H {{item}}
+    args:
+      chdir: /home/git/gitlab
+    with_items:
+      - cp config/unicorn.rb.example config/unicorn.rb
+      - git config --global user.name "GitLab"
+      - git config --global user.email "gitlab@localhost"
+      - git config --global core.autocrlf input
+      - cp config/database.yml.mysql config/database.yml
+
+  - name: Run git settings commands
+    command: sudo -u git cp config/database.yml.mysql config/database.yml
+    args:
+      chdir: /home/git/gitlab
+
+  - name: Replace secure password with localised password
+    replace: > 
+                dest=/home/git/gitlab/config/database.yml
+                regexp='(\s+)password:(\s+)"secure password"' 
+                replace='\1password:\2"{{mysql_root_password}}"'
+
+  - name: Change the access rights to directories
+    command: sudo -u git -H chmod o-rwx /home/git/gitlab/config/database.yml
+
+  - name: Install the charlock_holmes gem
+    command: sudo gem install charlock_holmes --version '0.6.9.4'
+    args:
+      chdir: /home/git/gitlab
+
+  - name: Replace the modernizer in the Gemfile
+    replace: >
+                dest=/home/git/gitlab/Gemfile
+                regexp='(\s+)gem(\s+)"modernizr",(\s+)"2.6.2"' 
+                replace='\1gem\2"modernizr-rails",\3"2.7.1"'
+
+  - name: Replace the modernizer in the Gemfile lock
+    replace: >
+                dest=/home/git/gitlab/Gemfile.lock
+                regexp='(\s+)modernizr(\s+)\(2.6.2\)' 
+                replace='\1modernizr-rails\2(2.7.1)'
+
+  - name: Replace the modernizer in the Gemfile lock
+    replace: >
+                dest=/home/git/gitlab/Gemfile.lock
+                regexp='(\s+)modernizr(\s+)\(=(\s+)2.6.2\)' 
+                replace='\1modernizr-rails\2(= 2.7.1)'
+
+  - name: Install all the required deployment gems
+    command: sudo -u git -H bundle install --deployment --without development test postgres aws
+    args:
+      chdir: /home/git/gitlab
+
+  - name: Finalize the setup
+    shell: "yes 'yes' | sudo -u git -H bundle exec rake gitlab:setup RAILS_ENV=production"
+    args:
+      chdir: /home/git/gitlab
+
+  - name: Copy the start up script to the init folder
+    command: sudo cp /home/git/gitlab/lib/support/init.d/gitlab /etc/init.d/gitlab
+
+  - name: Change the mode of the start up to executable
+    command: sudo chmod +x /etc/init.d/gitlab
+
+  - name: Update all the default upstart jobs
+    command: sudo update-rc.d gitlab defaults 21
+
+  - name: Start the gitlab service
+    command: sudo service gitlab start

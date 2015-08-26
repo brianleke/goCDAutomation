@@ -12,7 +12,7 @@ Clone the repository
 * git clone https://github.com/brianleke/goCDAutomation.git
 
 CD into the testmachineautomation directory
-* cd goCDAutomation
+* cd goCDAutomation/goCD
 
 Make sure the access configuration file exists by copying the .user-access-config.ex.yml to .user-access-config.yml
 * cp .user-access-config.ex.yml .user-access-config.yml

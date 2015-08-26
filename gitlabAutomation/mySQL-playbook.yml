@@ -1,0 +1,57 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+  vars:
+    sql_toolbox_dump_file: /vagrant/scripts/mySql_schema.txt
+  vars_files:
+    - .user-configurations.yml
+
+  tasks:
+  - name: install mySQL packages
+    apt: name={{item}} state=present
+    with_items:
+      - python-mysqldb
+      - libmysqlclient-dev
+      - mysql-client
+      - mysql-server
+
+  - name: copy cnf
+    copy: src=.my.cnf dest=~/.my.cnf owner=vagrant mode=0644
+    sudo: yes
+
+  - name: Add the port information to etc/services
+    lineinfile: dest=/etc/services line="mysql_connect\t3306/tcp"
+
+  - name: Add the port information to etc/services
+    lineinfile: dest=/etc/services line="mysql_connect\t3306/udp"
+
+  - name: Start the MySQL service
+    service:
+      name: mysql
+      state: started
+      enabled: true
+
+  - name: update mysql root password for all root accounts
+    mysql_user:
+      name: root
+      host: "{{ item }}"
+      password: "{{ mysql_root_password }}"
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      check_implicit_admin: yes
+      priv: "*.*:ALL,GRANT"
+    with_items:
+      - "{{ ansible_hostname }}"
+      - 127.0.0.1
+      - ::1
+      - localhost
+
+  - name: Restart the mysql service
+    command: sudo /etc/init.d/mysql restart
+
+  - name: Create the gitlabhq_production database
+    mysql_db: name=gitlabhq_production state=present
+
+  - name: Restore the sql schema from the sql dump
+    mysql_db: state=import name=gitlabhq_production target={{sql_toolbox_dump_file}}
