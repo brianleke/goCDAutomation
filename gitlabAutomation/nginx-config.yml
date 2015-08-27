@@ -27,8 +27,11 @@
   - name: Symbolic link the sites-enabled to sites-available
     command: sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/gitlab
 
-  #- name: Symbolic link the sites-enabled default to sites-available
-  #  command: sudo ln -s /etc/nginx/sites-available/gitlab /etc/nginx/sites-enabled/default
+  - name: Modify the ipv6 localhost url
+    replace: >
+                dest=/etc/nginx/sites-available/gitlab
+                regexp='(\s+)listen(\s+)\[::\]:80(\s+)default_server;'
+                replace='\1listen\2[::]:80 ipv6only=on\3default_server;'
 
   - name: Replace the server name in the nginx configuration
     replace: >
@@ -38,3 +41,8 @@
 
   - name: Restart nginx service
     command: sudo service nginx restart
+
+  - name: Reset the precompiled assets
+    command: sudo -u git -H bundle exec rake assets:precompile RAILS_ENV=production
+    args:
+      chdir: /home/git/gitlab
