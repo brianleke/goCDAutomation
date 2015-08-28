@@ -15,7 +15,7 @@ CD into the testmachineautomation directory
 * cd goCDAutomation/gitlabAutomation
 
 Modify the user details to match you settings with either VIM or nano etc
-* vim .user-access-config.yml
+* vim .user-configurations.yml
 
 Make sure the 
 * GITLAB_URL, 
