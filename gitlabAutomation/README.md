@@ -24,7 +24,7 @@ Make sure the
 
 to your credentials required
 
-Build virtual machine (Make sure nothing else is running on port 9001):
+Build virtual machine (Make sure nothing else is running on port 8081):
 * vagrant up
 
 Access Gitlab Interface
