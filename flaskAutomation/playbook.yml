@@ -74,8 +74,11 @@
     args:
       chdir: /home/www
 
-  - name: Copy the app file to the right folder
-    command: sudo cp /vagrant/files/app.py /home/www/flask_project/
+  - name: Copy the app files to the right folder
+    command: sudo cp /vagrant/files/{{item}} /home/www/flask_project/
+    with_items:
+      - app.py
+      - TestApp.py
 
   - name: Copy the app file to the right folder
     command: sudo mkdir static
