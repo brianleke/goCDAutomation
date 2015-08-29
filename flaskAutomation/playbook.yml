@@ -1,0 +1,90 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+  vars:
+    locale: en_US.UTF-8
+    timezone: UTC
+
+  tasks:
+  - name: dev locale
+    action: command sudo update-locale LC_ALL=en_US.UTF-8
+
+  - name: set default English
+    command: /usr/sbin/update-locale LANG={{ locale }} LC_ALL={{ locale }} LANGUAGE=en_US:en
+
+  - name: set /etc/localtime to UTC Timezone
+    command: /bin/cp /usr/share/zoneinfo/{{ timezone }} /etc/localtime
+
+  - name: apt-get update the server
+    apt: update_cache=yes
+
+  - name: Create a 4.5G swap file
+    command: "{{item}}"
+    with_items:
+      - "sudo dd if=/dev/zero of=/swapfile bs=500M count=9 conv=notrunc,noerror"
+      - "sudo chmod 600 /swapfile"
+      - "sudo mkswap /swapfile"
+      - "sudo swapoff -a"
+      - "sudo swapon /swapfile"
+
+  - name: Make the swapfile permanent
+    lineinfile: >
+                  dest=/etc/fstab
+                  line="/swapfile  none  swap  sw  0  0"
+
+  - name: install packages
+    apt: name={{item}} state=present
+    with_items:
+      - debhelper
+      - git
+      - vim
+      - curl
+      - tree
+      - build-essential
+      - python-pip
+      - python-virtualenv
+      - gunicorn
+
+  - name: Make the home directory for www
+    command: sudo mkdir /home/www
+
+  - name: Create a virtual env
+    command: sudo virtualenv env
+    args:
+      chdir: /home/www
+
+  - name: Copy the script across
+    command: sudo cp install_flask.sh /home/www/
+    args:
+      chdir: /vagrant/scripts/
+
+  - name: Run flask install script from pip
+    command: sudo chmod 755 /vagrant/scripts/install_flask.sh
+    args:
+      chdir: /home/www
+
+  - name: Run flask install script from pip
+    command: /vagrant/scripts/install_flask.sh
+    args:
+      chdir: /home/www
+
+  - name: Make the home directory for www
+    command: sudo mkdir flask_project
+    args:
+      chdir: /home/www
+
+  - name: Copy the app file to the right folder
+    command: sudo cp /vagrant/files/app.py /home/www/flask_project/
+
+  - name: Copy the app file to the right folder
+    command: sudo mkdir static
+    args:
+      chdir: /home/www/flask_project
+
+  - name: Copy the html file to static
+    command: sudo cp /vagrant/files/index.html /home/www/flask_project/static/
+
+# - include: mySQL-playbook.yml
+- include: nginx-config.yml
+

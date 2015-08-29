@@ -8,7 +8,7 @@
     - .user-configurations.yml
 
   tasks:
-  - name: install mySQL packages
+  - name: install nginx packages
     apt: name={{item}} state=present
     with_items:
       - nginx

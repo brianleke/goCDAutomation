@@ -1,0 +1,39 @@
+---
+- hosts: all
+  sudo: true
+  sudo_user: root
+
+  tasks:
+  - name: install nginx packages
+    apt: name={{item}} state=present
+    with_items:
+      - nginx
+      - supervisor
+
+  - name: copy sites-available file
+    command: sudo cp /vagrant/scripts/flask_project /etc/nginx/sites-available/flask_project
+
+  - name: delete the default configurations from sites-available
+    command: sudo rm /etc/nginx/sites-available/default
+
+  - name: delete the default configurations sites-enabled
+    command: sudo rm /etc/nginx/sites-enabled/default
+
+  - name: Symbolic link the sites-enabled to sites-available
+    command: sudo ln -s /etc/nginx/sites-available/flask_project /etc/nginx/sites-enabled/flask_project
+
+  - name: Copy the supervisor configuration file
+    command: sudo cp /vagrant/scripts/flask_project.conf /etc/supervisor/conf.d/flask_project.conf
+
+  - name: Restart nginx service
+    command: sudo service nginx restart
+
+  #- name: Stop gunicorn
+  #  command: sudo pkill gunicorn
+
+  - name: Start gunicorn with supervisor
+    command: "{{item}}"
+    with_items:
+      - sudo supervisorctl reread
+      - sudo supervisorctl update
+      - sudo supervisorctl start flask_project
