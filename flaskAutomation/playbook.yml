@@ -94,8 +94,11 @@
       - static
       - templates
 
-  - name: Copy the angular js minified file to the static folder
-    command: sudo cp /vagrant/angular.min.js /home/www/flask_project/static/
+  - name: Copy the angular js minified and app javascript file to the static folder
+    command: sudo cp /vagrant/{{item}} /home/www/flask_project/static/
+    with_items:
+      - angular.min.js
+      - myApp.js
 
 # - include: mySQL-playbook.yml
 - include: nginx-config.yml
