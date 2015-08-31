@@ -37,3 +37,8 @@
       - sudo supervisorctl reread
       - sudo supervisorctl update
       - sudo supervisorctl start flask_project
+
+  - name: Make sure the url links are accessible
+    command: python TestApp.py
+    args:
+      chdir: /home/www/flask_project
