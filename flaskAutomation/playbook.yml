@@ -81,12 +81,21 @@
       - TestApp.py
 
   - name: Copy the app file to the right folder
-    command: sudo mkdir static
+    command: sudo mkdir {{item}}
     args:
       chdir: /home/www/flask_project
+    with_items:
+      - static
+      - templates
 
   - name: Copy the html file to static
-    command: sudo cp /vagrant/files/index.html /home/www/flask_project/static/
+    command: sudo cp /vagrant/files/index.html /home/www/flask_project/{{item}}/
+    with_items:
+      - static
+      - templates
+
+  - name: Copy the angular js minified file to the static folder
+    command: sudo cp /vagrant/angular.min.js /home/www/flask_project/static/
 
 # - include: mySQL-playbook.yml
 - include: nginx-config.yml
