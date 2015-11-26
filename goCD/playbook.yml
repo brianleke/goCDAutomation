@@ -3,46 +3,15 @@
   sudo: true
   sudo_user: root
   vars:
-    app_name: Rumba
-    locale: en_US.UTF-8
-    timezone: UTC
     go_version: 15.1.0-1863
     GOCD_USER: go
     GOCD_GROUP: go
     project_root: /vagrant/iinet
     REPOSITORY_NAME: test_repository_url
-    PIPELINE_ONE_REPO: repository_one_url
-    PIPELINE_TWO_REPO: repository_two_url
-    PIPELINE_THREE_REPO: repository_three_url
-  vars_files:
-    - .user-access-config.yml
 
   tasks:
-  - name: dev locale
-    action: command sudo update-locale LC_ALL=en_US.UTF-8
-
-  - name: set default English
-    command: /usr/sbin/update-locale LANG={{ locale }} LC_ALL={{ locale }} LANGUAGE=en_US:en
-
-  - name: set /etc/localtime to UTC Timezone
-    command: /bin/cp /usr/share/zoneinfo/{{ timezone }} /etc/localtime
-
   - name: apt-get update the server
     apt: update_cache=yes
-
-  - name: Create a 4.5G swap file
-    command: "{{item}}"
-    with_items:
-      - "sudo dd if=/dev/zero of=/swapfile bs=500M count=9 conv=notrunc,noerror"
-      - "sudo chmod 600 /swapfile"
-      - "sudo mkswap /swapfile"
-      - "sudo swapoff -a"
-      - "sudo swapon /swapfile"
-
-  - name: Make the swapfile permanent
-    lineinfile: >
-                  dest=/etc/fstab
-                  line="/swapfile  none  swap  sw  0  0"
 
   - name: install packages
     apt: name={{item}} state=present
@@ -119,29 +88,9 @@
     set_fact:
      GOCD_AGENT_ID: "{{ tmp_go_agent_id.stdout }}"
 
-  - name: Set the repository user name
-    set_fact:
-      REPO_USER_NAME: "{{REPO_USER_NAME}}"
-
-  - name: Set the repository user password
-    set_fact:
-      REPO_PASSWORD: "{{REPO_PASSWORD}}"
-
   - name: Set the repository name
     set_fact:
       REPOSITORY_NAME: "{{REPOSITORY_NAME}}"
-
-  - name: Set the pipeline one repository url
-    set_fact:
-      PIPELINE_ONE_REPO: "{{PIPELINE_ONE_REPO}}"
-
-  - name: Set the pipeline two repository url
-    set_fact:
-      PIPELINE_TWO_REPO: "{{PIPELINE_TWO_REPO}}"
-
-  - name: Set the pipeline three repository url
-    set_fact:
-      PIPELINE_THREE_REPO: "{{PIPELINE_THREE_REPO}}"
 
   - name: retrieve existing cruise-config.xml
     fetch: dest="/tmp/{{ ansible_hostname }}/" src="/etc/go/cruise-config.xml" flat="yes"
