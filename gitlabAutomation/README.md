@@ -14,7 +14,7 @@ Clone the repository
 CD into the testmachineautomation directory
 * cd goCDAutomation/gitlabAutomation
 
-Modify the user details to match you settings with either VIM or nano etc
+Modify the user details to match your settings with either VIM or nano etc
 * vim .user-configurations.yml
 
 Make sure the 
